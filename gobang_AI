@@ -1,0 +1,203 @@
+#pragma once
+#include<iostream>
+#include"Point.h"
+using namespace std;
+const int X = 21; //棋盘行数
+const int Y = 21; //棋盘列数
+char p[X][Y];//定义棋盘
+int m = 0;//定义临时点，保存输入坐标
+int n = 0;
+
+void dropChessAt(Point P)
+{
+	int x2;
+	int y2;
+	x2 = P.x;
+	y2 = P.y;
+	p[x2][y2] = 'O';
+}
+
+char getPointAt(Point P, int dir, int offset)
+{
+	QPoint m_offset[8] = 
+	{
+	QPoint(0,-1),QPoint(1,-1),QPoint(1,0),QPoint(1,1),
+	QPoint(0,1),QPoint(-1,1),QPoint(-1,0),QPoint(-1,-1)
+	};
+	int r = P.y;
+	int c = P.x;
+
+	r = r + offset * m_offset[dir].y;
+	c = c + offset * m_offset[dir].x;
+
+	if (r < 1 || c < 1 || r >= 20 || c >= 20)
+		return 0;
+
+	return p[c][r];
+}
+
+
+int envaluate(Point p, char who)
+{
+	int value = 0;
+	char opposite = (who == '@') ? '@' : 'O'; // 敌我方
+
+	for (int i = 0; i < 8; i++)  // 8个方向
+	{
+		//判断是否存在 *11110
+		if (getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == who
+			&& getPointAt(p, i, 3) == who && getPointAt(p, i, 4) == who
+			&& getPointAt(p, i, 5) == '+')
+		{
+			value += 4000000;
+		}
+
+		// 判断是否存在 21111*
+		if (getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == who
+			&& getPointAt(p, i, 3) == who && getPointAt(p, i, 4) == who
+			&& getPointAt(p, i, 5) == opposite)
+		{
+			value += 500000; 
+		}
+
+		// 判断是否存在 111*1
+		if (getPointAt(p, i, -1) == who && getPointAt(p, i, 1) == who
+			&& getPointAt(p, i, 2) == who && getPointAt(p, i, 3) == who)
+		{
+			value += 500000; 
+
+		}
+		// 判断是否存在 011*10
+		if (getPointAt(p,i,-3) == '+' && getPointAt(p, i, -2) == who && getPointAt(p, i, -1) == who
+			&& getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == '+')
+		{
+			value += 200000;
+
+		}
+
+		// 判断是否存在 01*112
+		if (getPointAt(p, i, -3) == opposite && getPointAt(p, i, 2) == who && getPointAt(p, i, 1) == who
+			&& getPointAt(p, i, -1) == who && getPointAt(p, i, -2) == '+')
+		{
+			value += 50000;
+
+		}
+
+		// 判断是否存在 011*12
+		if (getPointAt(p, i, -3) == '+' && getPointAt(p, i, -2) == who && getPointAt(p, i, -1) == who
+			&& getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == opposite)
+		{
+			value += 50000;
+
+		}
+
+		// 判断是否存在 01*110
+		if (getPointAt(p, i, 3) == '+' && getPointAt(p, i, 2) == who && getPointAt(p, i, 1) == who
+			&& getPointAt(p, i, -1) == who && getPointAt(p, i, -2) == '+')
+		{
+			value += 200000;
+
+		}
+
+		//判断是否存在 *111*
+		if (getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == who
+			&& getPointAt(p, i, 3) == who && getPointAt(p, i, 4) == '+')
+		{
+			value += 200000;
+		}
+
+		//判断是否存在 2111*
+		if (getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == who
+			&& getPointAt(p, i, 3) == who && getPointAt(p, i, 4) == opposite)
+		{
+			value += 1000;
+		}
+		
+		//判断是否存在 *11*
+		if (getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == who
+			&& getPointAt(p, i, 3) == '+' )
+		{
+			value += 500;
+		}
+
+		//判断是否存在 *1*1*
+		if (getPointAt(p, i, 1) == who && getPointAt(p, i, 2) == '+'
+			&& getPointAt(p, i, 3) == who && getPointAt(p, i, 4) == '+')
+		{
+			value += 500;
+		}
+
+		// 判断是否存在 1*001（死二）
+		if (getPointAt(p, i, -1) == who && getPointAt(p, i, 1) == '+'
+			&& getPointAt(p, i, 2) == '+' && getPointAt(p, i, 3) == '+')
+		{
+			value += 100;
+		}
+
+		value += (getPointAt(p, i, -1) == who
+			+ getPointAt(p, i, -1) == opposite) * 25;
+	}
+	return value;
+}
+
+void isTimeToAI()
+{
+	Point bestPos1;  // 最佳的进攻位置
+	Point bestPos2;  // 最佳的防守位置
+
+
+	int max1 = 0;// 进攻
+
+
+	for (int r = 0; r < X; r++) //遍历棋盘
+	{
+		for (int c = 0; c < Y;c++)
+		{
+			Point cur(r, c);
+
+			if ((p[r][c] == '@') || (p[r][c] == 'O'))  // 有棋子跳过
+				continue;
+
+			int value = envaluate(cur, '@');
+
+			if (max1 < value)
+			{
+				max1 = value;
+				bestPos1 = cur;
+			}
+		}
+	}
+
+
+	int max2 = 0; // 防守
+
+
+	for (int r = 0; r < X; r++) // 遍历棋盘
+	{
+		for (int c = 0; c < Y;c++)
+		{
+			Point cur(r, c);  
+
+			if ((p[r][c] == '@') || (p[r][c] == 'O'))  // 有棋子跳过
+				continue;
+
+			int value = envaluate(cur, 'O');
+
+			if (max2 < value)
+			{
+				max2 = value;
+				bestPos2 = cur;
+			}
+		}
+	}
+
+	// 从防守和进攻中找到最好的情况。
+	if (max1 >= max2)  // 进攻
+	{
+		dropChessAt(bestPos1);
+	}
+	else             // 防守
+	{
+		dropChessAt(bestPos2);
+	}
+}
