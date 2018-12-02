@@ -1,0 +1,35 @@
+#include "Point.h"
+
+Point::Point(char x1,char y1)
+{
+	x = x1;
+	y = y1;
+}
+
+
+Point::~Point()
+{
+}
+
+#pragma once
+class Point
+{
+public:
+	Point(char x1=11, char y1=11);
+	~Point();
+	char x;
+	char y;
+};
+
+class QPoint
+{
+public:
+	QPoint(int x1, int y1)
+	{
+		x = x1;
+		y = y1;
+	}
+	int x;
+	int y;
+};
+
